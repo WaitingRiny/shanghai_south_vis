@@ -1,0 +1,157 @@
+========================================================================
+项目汇报及设计说明报告 - 第三版 (Project Report & Documentation - Edition 03)
+========================================================================
+项目名称: Resonating Echoes (共鸣回响 - 城市数据视觉投影装置)
+对应跨页: THE ENCOUNTER (相遇) | PROCESS (过程) | PROPOSAL (方案)
+作业版本: Edition 03 (第三版 - 深度多功能改进版)
+========================================================================
+
+------------------------------------------------------------------------
+第一板块：THE ENCOUNTER / 相遇与呈现 (SPREAD 1 OF 5)
+------------------------------------------------------------------------
+
+【项目基本信息】
+* 项目标题 (PROJECT TITLE):
+  Resonating Echoes
+
+* 团队与成员 (TEAM AND MEMBERS):
+  Team 04 | 成员：[您的名字 / Your Name] & [合作伙伴名字 / Partner Name]
+
+* 核心理念 (PREMISE - 18 words):
+  An interactive data-driven visualization mapping urban environmental noise and pedestrian flow onto displaced concentric soundwave rings.
+  （一个交互式数据驱动视觉装置，将城市环境噪音和客流波动映射至发生位移的同心声波圆环中。）
+
+* 场地与实时数据 (SITE AND LIVE DATA):
+  - 场地与观看场景: 上海南站主出发大厅核心钢结构实体墙面。
+  - 建筑设计与几何中心呼应: 装置的“同心声波圆环”视觉语言呼应了上海南站独特的圆形穹顶钢结构建筑。本系统不仅支持在X轴正半轴附近（默认72%高度）渲染多行排版，还支持手势/滑块调节圆心(Origin)的 X 与 Y 坐标占比。
+  - 数据来源: 地铁与铁路交汇大厅现场安装的高精度声级变送器（Noise Sensor）和客流检测深度摄像头（IP Flow Camera）。
+  - 控制视觉属性:
+    * 环境噪音声级 (Noise Level in dB) 控制文字区域圆环的径向位移偏移量、颤动幅度，以及垂直切片步进式错位量 (Displacement Offset & Vertical Column Shredding)。
+    * 客流密度 (Pedestrian Flow) 控制声波线圈的频率与间距 (Ring Spacing/Frequency)。
+    * PM2.5浓度控制线圈的粗细与边缘模糊光晕 (Line Width & Bloom Glow)。
+    * 风速控制同心圆环向外发散流动的动画速度 (Wave Flow Speed)。
+
+* 现场实体标牌 (IN SPACE LABEL - EN):
+  -------------------------------------------------------------
+  RESONATING ECHOES
+  
+  This installation visualizes live ambient sound levels, pedestrian 
+  counts, and air quality indexes from Shanghai South Railway Station,
+  translating transient transit loads into displaced concentric 
+  typographic wavefields that mirror the station's circular dome.
+  
+  LIVE READING (UTC+8 09:00:00):
+  Ambient Noise: 92 dB  |  Pedestrian Flow: 172 PPL/min
+  PM2.5 Index: 42 ug/m³ |  Air Velocity: 4.5 m/s
+  Status: Railway Departure Peak Hour
+  -------------------------------------------------------------
+
+
+------------------------------------------------------------------------
+第二板块：PROCESS / 设计过程与技术实现 (SPREAD 3 OF 5)
+------------------------------------------------------------------------
+
+【实现逻辑与技术说明 (BUILD)】
+本作品基于 HTML5 Canvas 构建，利用多重离屏缓冲区（Offscreen Canvas）实现实时的高清字形遮罩。
+- **多行排版适应性算法 (Multi-line Typography System)**: Edition 03 全面升级以支持多行文本投影（默认以折行 `"Shanghai\nSouth"` 展示）。渲染引擎在接收文本后，在 $y$ 轴方向以 `lineSpacing` (1.15倍) 进行动态堆叠，并通过多轮边界尺寸检测，自适应计算字号缩放比例，防止文本超出可视画布或发生重叠。
+- **字号与字重微调接口 (Adjustable Font Styles)**: 系统引进了独立的字号比例滑块（`10%` 到 `60%`）与字重（`Thin 100` 至 `Black 900`）下拉选单，使排版样式能从超细的轻量线条过渡到极其厚实的重块面轮廓，极大拓宽了参数化艺术设计（Generative Typography）的表现张力。
+- **双向绑定声波中心点系统**: 观众可在画布上直接通过鼠标（或触摸屏）拖拽或双击任意位置，反向折算百分比并同步更新控制端滑块数值；拨动滑块也会直接平移圆心。
+- **垂直切片错位机制 (Vertical Column Shredding)**: 在 $x$ 轴方向以 `sliceWidth` (默认8像素) 为步长进行循环切割，各切片高度根据噪音声级所驱动的余弦震荡波生成偏移量 $\Delta y(x)$，将背景镂空遮罩与文字圈线层进行偏移动画渲染。
+
+【代码关键片段展示 (CODE FRAGMENT)】
+以下为实现“多行文本渲染与字重自适应大小”的核心代码段：
+```javascript
+// 1. 动态拆分多行文本并计算自适应字体大小
+const lines = textVal.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+if (lines.length > 0) {
+  // 从视觉参数配置中获取字重（fontWeight）与字号（fontSizePercent）
+  const baseFontSize = h * (visualParams.fontSizePercent / 100);
+  ctxTarget.font = `${visualParams.fontWeight} ${baseFontSize}px "Outfit", "Arial Black", sans-serif`;
+  
+  // 测量所有行中最宽一行的宽度
+  let maxLineWidth = 0;
+  lines.forEach(line => {
+    const lw = ctxTarget.measureText(line).width;
+    if (lw > maxLineWidth) maxLineWidth = lw;
+  });
+  
+  // 如果最宽行超过屏幕的 85%，等比缩放字号
+  let finalFontSize = baseFontSize;
+  if (maxLineWidth > w * 0.85) {
+    finalFontSize = baseFontSize * (w * 0.85 / maxLineWidth);
+  }
+  
+  // 校验多行文本叠加后的总垂直高度是否溢出
+  const lineSpacing = 1.15;
+  const totalHeight = finalFontSize * lineSpacing * lines.length;
+  if (totalHeight > h * 0.70) {
+    finalFontSize = finalFontSize * (h * 0.70 / totalHeight);
+  }
+  
+  // 重新渲染字体属性
+  ctxTarget.font = `${visualParams.fontWeight} ${finalFontSize}px "Outfit", "Arial Black", sans-serif`;
+  
+  // 以 Y 轴中线百分比为轴心，自适应绘制多行文字
+  const textY = h * visualParams.textYPercent;
+  const lineH = finalFontSize * lineSpacing;
+  const startY = textY - (lineH * (lines.length - 1)) / 2;
+  
+  lines.forEach((line, index) => {
+    const y = startY + index * lineH;
+    ctxTarget.fillText(line, w / 2, y);
+  });
+}
+```
+
+【AI 辅助与自主决策声明 (AI USE ACKNOWLEDGEMENT)】
+* AI辅助部分: 多行文本自适应高度收缩换算、字重字号样式转换（CSS font-style 字符串构建）以及 A-size 海报图像导出时对多行排版的高度校正由AI辅助编写。
+* 自主设计决策: 团队做出了对多行折行文字自适应缩放（防止字号过大溢出画布）的交互限制决策，并设计了支持中英文双语输入的控制面板。
+
+【开发日志摘要 (COMMIT LOG - EDITION 03)】
+- Commit 11: Added visual center X & Y coordinate percentage sliders inside the fine-tuning tab.
+- Commit 12: Developed dual-binding feedback logic between canvas mouse dragging events and control panel sliders.
+- Commit 13: Integrated center percentage recalculation into responsive resize logic and A-size exporter.
+- Commit 14: Replaced single line text input with textarea element, and implemented multi-line dynamic layout sizing algorithms.
+  (将单行输入框重构为多行文本域，开发了多行文本自适应几何框体布局算法。)
+- Commit 15: Added adjustable Text Font Size slider and Font Weight dropdown options.
+  (添加了字号百分比滑动条以及字重下拉菜单选择器，支持精细化调整排版形态。)
+
+
+------------------------------------------------------------------------
+第三板块：PROPOSAL / 最终方案与落地规划 (SPREAD 5 OF 5)
+------------------------------------------------------------------------
+
+【永久安装与落地参数 (PERMANENT INSTALLATION & PLACEMENT)】
+- 建筑大尺度安装定位: 装置设计长12米，高3米，安装在上海南站大厅核心换乘区域。墙面涂刷纳米消光吸音黑色复合材料。
+- 硬件设备方案 (PLACEMENT AND HARDWARE):
+  * 投影系统: 2台 Panasonic PT-RQ35K 激光工程投影机。
+  * 主控电脑: 1台 研华(Advantech) 工业级无风扇边缘计算微型计算机。
+  * 传感网络: 1路 乐信集成式PoE网络数字声级传感器 + 1路 换乘安全客流统计高清网络相机。
+  * 能源及布线: 240V 16A 独立交流电源回路，Cat6 STP 屏蔽线局域组网。
+
+【四大维度评估自评 (FOUR LENSES)】
+
+* 01 空间可读性 (SPATIAL LEGIBILITY):
+  多行文本（"Shanghai\nSouth"）的垂直堆叠布局大幅拓宽了垂直空间的可读维度。字号和字重调节选项（Thin 100 到 Black 900）支持现场调试人员根据南站玻璃圆拱射入的不同光照强度快速调整对比度。较粗的字重（如900）在白昼强光下对比度更优，而较细的字重（如300）在夜晚则散发出极简的数字美感。
+
+* 02 响应性能 (RESPONSIVENESS):
+  数据以小时为基准平滑过渡，并在切换时刻进行 2.0 秒的平滑差值。双向绑定的圆心定位做到了零迟滞的平滑刷新。
+
+* 03 公共互动体验 (PUBLIC ENCOUNTER):
+  支持多行输入功能大幅增强了公共交互大屏的表达力，通勤乘客或评委可以输入短小的诗句或多词组合。全新的“Save A-Size Image”海报级图像导出功能支持对多行字重字号排版进行完美还原，从而拓展了数字纪念品在社交媒体的传播链条。
+
+* 04 长期可维护性 (PERMANENCE):
+  设备集成在防尘、温控、IP54级的金属外箱内。主控PC配置有Watchdog自愈系统。
+
+【致谢与代码仓库 (CREDITS AND REPOSITORY)】
+* 团队分工 (Roles):
+  - 创意概念/现场规划/文字撰写: [您的名字 / Your Name]
+  - 技术实现/Canvas算法调试: [您的名字 / Your Name]
+* 指导老师 (Supervising Staff):
+  - [指导老师名字 / Advisor Name]
+* 演示代码仓库链接 (GitHub Repository Link):
+  - https://github.com/[您的GitHub用户名]/resonating-echoes-installation
+
+========================================================================
+第三版修改文档编写完毕。多行、字重、字号支持已完美归档。
+========================================================================

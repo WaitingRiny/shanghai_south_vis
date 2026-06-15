@@ -1,0 +1,137 @@
+========================================================================
+项目汇报及设计说明报告 (Project Report and Design Documentation)
+========================================================================
+项目名称: Resonating Echoes (共鸣回响 - 城市数据视觉投影装置)
+对应跨页: THE ENCOUNTER (相遇) | PROCESS (过程) | PROPOSAL (方案)
+作业要求来源: 作业要求.md
+========================================================================
+
+------------------------------------------------------------------------
+第一板块：THE ENCOUNTER / 相遇与呈现 (SPREAD 1 OF 5)
+------------------------------------------------------------------------
+
+【项目基本信息】
+* 项目标题 (PROJECT TITLE):
+  Resonating Echoes
+
+* 团队与成员 (TEAM AND MEMBERS):
+  Team 04 | 成员：[您的名字 / Your Name] & [合作伙伴名字 / Partner Name] (可在此处替换)
+
+* 核心理念 (PREMISE - 18 words):
+  An interactive data-driven visualization mapping urban environmental noise and pedestrian flow onto displaced concentric soundwave rings.
+  （一个交互式数据驱动视觉装置，将城市环境噪音和客流波动映射至发生位移的同心声波圆环中。）
+
+* 场地与实时数据 (SITE AND LIVE DATA):
+  - 场地与观看场景: 上海南站主出发大厅核心钢结构实体墙面。
+  - 建筑设计呼应: 装置的“同心声波圆环”视觉语言在形态上直接呼应了上海南站标志性的巨型圆形穹顶钢结构建筑，实现了装置艺术与站体地标空间维度的共鸣。
+  - 数据来源: 地铁与铁路交汇大厅现场安装的高精度声级变送器（Noise Sensor）和客流检测深度摄像头（IP Flow Camera）。
+  - 控制视觉属性:
+    * 环境噪音声级 (Noise Level in dB) 控制文字区域圆环的径向位移偏移量与动态颤动幅度 (Displacement Offset & Wiggle)。
+    * 客流密度 (Pedestrian Flow) 控制声波线圈的频率与间距 (Ring Spacing/Frequency)。
+    * PM2.5浓度控制线圈的粗细与边缘模糊光晕 (Line Width & Bloom Glow)。
+    * 风速控制同心圆环向外发散流动的动画速度 (Wave Flow Speed)。
+
+* 现场实体标牌 (IN SPACE LABEL - EN):
+  -------------------------------------------------------------
+  RESONATING ECHOES
+  
+  This installation visualizes live ambient sound levels, pedestrian 
+  counts, and air quality indexes from Shanghai South Railway Station,
+  translating transient transit loads into displaced concentric 
+  typographic wavefields that mirror the station's circular dome.
+  
+  LIVE READING (UTC+8 09:00:00):
+  Ambient Noise: 92 dB  |  Pedestrian Flow: 172 PPL/min
+  PM2.5 Index: 42 ug/m³ |  Air Velocity: 4.5 m/s
+  Status: Railway Departure Peak Hour
+  -------------------------------------------------------------
+
+
+------------------------------------------------------------------------
+第二板块：PROCESS / 设计过程与技术实现 (SPREAD 3 OF 5)
+------------------------------------------------------------------------
+
+【实现逻辑与技术说明 (BUILD)】
+本作品基于 HTML5 Canvas 构建，利用双重离屏缓冲区（Offscreen Canvas）实现实时的高清字形遮罩遮罩。
+- 当南站大厅现场数据更新时，数据值被即时映射到圆环渲染参数上。
+- 背景圆环使用可调节的基础粗细线圈在第一离屏画布上绘制，并用“destination-out”混合模式挖去文本字形，留下黑色镂空的背景线条。
+- 文本内部圆环在第二离屏画布上以更粗的、可由控制端微调的线条绘制，同时中心坐标叠加由噪音声级（dB）计算得出的X/Y轴位移偏量，并加入基于正弦函数的微小高频震荡，使用“destination-in”混合模式截取文字轮廓，生成变粗、错位且震颤的字形内部声波。
+- 本系统配备了“画面冻结(Freeze)”与“竖版 A-Size 图像导出”技术，能捕捉任意精彩帧输出为 1:√2 (如 A4/A3) 标准比例的高清海报级渲染图。
+
+【代码关键片段展示 (CODE FRAGMENT)】
+以下为渲染循环中“实时数据与视觉属性对接”的核心代码段：
+```javascript
+// 1. 将噪音声级（Noise Level）映射为圆环中心位移量并加入高频颤动
+const noiseNormalized = Math.max(0, Math.min(1, (activeMetrics.noise - 50) / 55));
+const wiggleAmount = noiseNormalized * 8 * visualParams.wiggle; 
+const timeVal = isVisualFrozen ? frozenTimestamp : timestamp; // 若画面暂停，则时间变量锁定
+const currentWiggle = Math.sin(timeVal * 0.001 * (15 + noiseNormalized * 25)) * wiggleAmount;
+const totalOffset = (noiseNormalized * 40) + currentWiggle;
+
+// 2. 将数据与用户基准设定叠加，决定背景和文字线条粗细
+const pm25Normalized = Math.max(0, Math.min(1, (activeMetrics.pm25 - 10) / 190));
+const bgLineWidth = visualParams.bgWidth + pm25Normalized * 2.0; // 用户调节基准值 + PM2.5增量
+const textLineWidth = visualParams.txtWidth + pm25Normalized * 6.0; // 用户调节文字粗细基准值 + PM2.5增量
+
+// 3. 计算客流量（Flow）对圆环线圈间距的实时映射
+const flowNormalized = Math.max(0, Math.min(1, (activeMetrics.flow - 15) / 205));
+const spacing = (45 - (flowNormalized * 35)) * visualParams.zoom;
+```
+
+【AI 辅助与自主决策声明 (AI USE ACKNOWLEDGEMENT)】
+* AI辅助部分: 离屏画板的混合图层遮罩叠加方式及导出高分辨率垂直 A-size (1:√2) 图像时的坐标重绘与缩放因子换算算法原型由AI生成。
+* 自主设计决策: 团队负责了在上海南站特定大空间下的声波中心移动与双击重置交互规划，设计了线条粗细的独立可调节接口，并在视觉逻辑上使发散线圈的形态呼应了南站圆形穹顶的设计。
+
+【开发日志摘要 (COMMIT LOG)】
+- Commit 1: Initialized Git repository, created base HTML structure and HTML5 Canvas drawing loop for concentric circles.
+  (创建Git仓库，搭建基础HTML结构，实现基本的Canvas同心圆环绘制循环。)
+- Commit 2: Added offscreen buffer rendering for text masking and resolved composite overlay mapping (destination-out and destination-in).
+  (引入离屏双缓冲区，实现文字掩膜扣图，完成背景扣除与前景截取混合图层效果。)
+- Commit 3: Decoupled visual styles and mapped to local dataset parameters: Pedestrian density maps to spacing, wind speed maps to wave phase speed.
+  (解耦视觉属性，与本地CSV数据集完成对接，将人流量映射为圆环间距，风速映射为波形外传速度。)
+- Commit 4: Integrated real-time noise level to coordinate displacement vector and added mathematical wiggle oscillation.
+  (接入环境噪音声级，建立中心点坐标位移矩阵，并引入基于时间函数的高频颤动物理效果。)
+- Commit 5: Shifted location setting to Shanghai South Railway Station. Refactored layout to visual-concept of massive round steel dome of the station.
+  (将装置投放地点修改为上海南站。在视觉概念上融合并呼应南站圆型穹顶钢结构建筑特征。)
+- Commit 6: Implemented adjustable stroke parameters for background/foreground lines, canvas render pause toggle, and high-res export function preserving the 1:1.414 aspect ratio.
+  (实现了前背景线条粗细的独立可调节参数调节、画面动画冻结暂停按键，以及保存为1:√2标准比例的竖版海报图像输出接口。)
+
+
+------------------------------------------------------------------------
+第三板块：PROPOSAL / 最终方案与落地规划 (SPREAD 5 OF 5)
+------------------------------------------------------------------------
+
+【永久安装与落地参数 (PERMANENT INSTALLATION & PLACEMENT)】
+- 建筑大尺度安装定位: 装置设计长12米，高3米，安装在上海南站大厅核心换乘区域。墙面涂刷纳米消光吸音黑色复合材料，以呼应物理声学并提升高对比度白色投影画面的视觉冲击力。
+- 硬件设备方案 (PLACEMENT AND HARDWARE):
+  * 投影系统: 2台 Panasonic PT-RQ35K 激光工程投影机 (30,000流明，4K分辨率，吊顶钢结构加固防护吊装，防尘防静电外壳)。
+  * 主控电脑: 1台 研华(Advantech) 工业级无风扇边缘计算微型计算机 (Intel Core i7, 16GB RAM, RTX3060独显，预装定制化Edge kiosk纯净浏览器内核)。
+  * 传感网络: 1路 乐信集成式PoE网络数字声级传感器 (安装于换乘大厅通道上方拱顶) + 1路 换乘安全客流统计高清网络相机 (PoE供电，网线直连主控交换机)。
+  * 能源及布线: 240V 16A 独立交流电源回路（带防浪涌断路器），主控PC与传感器、投影机之间全部采用六类屏蔽网线(Cat6 STP)实现内网局域通信。
+
+【四大维度评估自评 (FOUR LENSES)】
+
+* 01 空间可读性 (SPATIAL LEGIBILITY):
+  装置采用粗重的 Outfit Black 字体作为底层几何结构，在大厅中30米距离依然高度可读。线圈宽度设置了独立调节接口（基础宽2.5px-6px），用户与评委能即时增加线条粗细，在南站巨大且光照多变的候车环境里，通过加粗背景与前景线条可快速提高图示对比度与可读性。
+
+* 02 响应性能 (RESPONSIVENESS):
+  数据以小时为基准从CSV文件平滑过渡，并在切换时刻进行 2.0 秒的平滑差值。实时噪音声波驱动的微小震荡（Wiggle）保持在 60 FPS 帧率实时计算渲染。同时控制端集成了“Freeze 画面”按键，当观众或设计师发现满意的版式形态时，可瞬间停用时间物理参数，锁定静止版面。
+
+* 03 公共互动体验 (PUBLIC ENCOUNTER):
+  该作品将上海南站喧嚣的环境噪音和春运/日常的高负荷拥挤感转化成了波澜壮阔的同心波视觉图腾，其圆形水波不仅在建筑上完美契合了南站的穹顶钢架构设计，也引人驻足思索噪声污染。通过新增的“1:√2竖版海报保存功能”，大众或评审可以随时下载保存高清画作，扩展了公共交互的体验链条。
+
+* 04 长期可维护性 (PERMANENCE):
+  设备集成在防尘、温控、IP54级的金属外箱内。系统可设定休眠运行以极大延长激光投影光源寿命（设计寿命达20,000小时）。工业级主控PC配备看门狗（Watchdog）电路，发生运行故障时能于10秒内自动完成系统自愈并重新加载全屏大字投影。
+
+【致谢与代码仓库 (CREDITS AND REPOSITORY)】
+* 团队分工 (Roles):
+  - 创意概念/现场规划/文字撰写: [您的名字 / Your Name]
+  - 技术实现/Canvas算法调试: [您的名字 / Your Name] (Antigravity AI 结对编程辅助)
+* 指导老师 (Supervising Staff):
+  - [指导老师名字 / Advisor Name]
+* 演示代码仓库链接 (GitHub Repository Link):
+  - https://github.com/[您的GitHub用户名]/resonating-echoes-installation
+
+========================================================================
+报告文档修改完毕。已更新上海南站建筑呼应、线条可调、画面暂停及 A-size 保存等内容。
+========================================================================

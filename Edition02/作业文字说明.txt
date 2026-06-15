@@ -1,0 +1,144 @@
+========================================================================
+项目汇报及设计说明报告 - 第二版 (Project Report & Documentation - Edition 02)
+========================================================================
+项目名称: Resonating Echoes (共鸣回响 - 城市数据视觉投影装置)
+对应跨页: THE ENCOUNTER (相遇) | PROCESS (过程) | PROPOSAL (方案)
+作业版本: Edition 02 (第二版)
+========================================================================
+
+------------------------------------------------------------------------
+第一板块：THE ENCOUNTER / 相遇与呈现 (SPREAD 1 OF 5)
+------------------------------------------------------------------------
+
+【项目基本信息】
+* 项目标题 (PROJECT TITLE):
+  Resonating Echoes
+
+* 团队与成员 (TEAM AND MEMBERS):
+  Team 04 | 成员：[您的名字 / Your Name] & [合作伙伴名字 / Partner Name]
+
+* 核心理念 (PREMISE - 18 words):
+  An interactive data-driven visualization mapping urban environmental noise and pedestrian flow onto displaced concentric soundwave rings.
+  （一个交互式数据驱动视觉装置，将城市环境噪音和客流波动映射至发生位移的同心声波圆环中。）
+
+* 场地与实时数据 (SITE AND LIVE DATA):
+  - 场地与观看场景: 上海南站主出发大厅核心钢结构实体墙面。
+  - 建筑设计呼应: 装置的“同心声波圆环”视觉语言在形态上直接呼应了上海南站标志性的巨型圆形穹顶钢结构建筑。为了完美再现参考图的图面比例，文字区域由第一象限平移下放至圆环的**X正半轴**区域（即大厅地平线高度以上 72% Y轴占比位置），从而增强了与建筑体量感的咬合关系。
+  - 数据来源: 地铁与铁路交汇大厅现场安装的高精度声级变送器（Noise Sensor）和客流检测深度摄像头（IP Flow Camera）。
+  - 控制视觉属性:
+    * 环境噪音声级 (Noise Level in dB) 控制文字区域圆环的径向位移偏移量、颤动幅度，以及独特的**垂直切片步进式错位量** (Displacement Offset & Vertical Column Shredding)，完全再现了参考图中那种斑驳错位的字形质感。
+    * 客流密度 (Pedestrian Flow) 控制声波线圈的频率与间距 (Ring Spacing/Frequency)。
+    * PM2.5浓度控制线圈的粗细与边缘模糊光晕 (Line Width & Bloom Glow)。
+    * 风速控制同心圆环向外发散流动的动画速度 (Wave Flow Speed)。
+
+* 现场实体标牌 (IN SPACE LABEL - EN):
+  -------------------------------------------------------------
+  RESONATING ECHOES
+  
+  This installation visualizes live ambient sound levels, pedestrian 
+  counts, and air quality indexes from Shanghai South Railway Station,
+  translating transient transit loads into displaced concentric 
+  typographic wavefields that mirror the station's circular dome.
+  
+  LIVE READING (UTC+8 09:00:00):
+  Ambient Noise: 92 dB  |  Pedestrian Flow: 172 PPL/min
+  PM2.5 Index: 42 ug/m³ |  Air Velocity: 4.5 m/s
+  Status: Railway Departure Peak Hour
+  -------------------------------------------------------------
+
+
+------------------------------------------------------------------------
+第二板块：PROCESS / 设计过程与技术实现 (SPREAD 3 OF 5)
+------------------------------------------------------------------------
+
+【实现逻辑与技术说明 (BUILD)】
+本作品基于 HTML5 Canvas 构建，利用多重离屏缓冲区（Offscreen Canvas）实现实时的高清字形遮罩。
+- 当南站数据更新时，数据值被映射到圆环渲染参数上。
+- **垂直切片错位机制 (Vertical Column Shredding)**: 为了消除原版字形内部线条过于规整的问题，Edition 02 在渲染阶段对字形实施了垂直切片位移算法。系统在 $x$ 轴方向以 `sliceWidth` (默认8像素) 为步长进行循环切割，各切片高度根据噪音声级所驱动的余弦震荡波生成偏移量 $\Delta y(x)$，将背景镂空遮罩与文字圈线层分别进行相同规则的偏移动画渲染。
+- 此逻辑使字形边缘呈现出类似于针式打印或电子屏撕裂的栅格化错位，同时字形内部的声波弧线也产生了断裂跃迁，极其完美地还原了 [参考.jpg](file:///c:/Users/Administrator/Desktop/2026%20D&I%20Y2%20Y3/期末作业/参考.jpg) 中的视错觉细节。
+
+【代码关键片段展示 (CODE FRAGMENT)】
+以下为渲染循环中“垂直切片错位和镂空”的核心代码段：
+```javascript
+// 1. 生成切片参数，错位幅度由噪音声级（Noise Level）映射
+const sliceWidth = visualParams.sliceWidth;
+const noiseNormalized = Math.max(0, Math.min(1, (activeMetrics.noise - 50) / 55));
+const sliceAmplitude = noiseNormalized * 50 * visualParams.wiggle; 
+
+// 2. 离屏渲染 Sliced Text Mask，用以在背景同心圆环中精确挖去错位后的文字形状
+slicedTextCtx.clearRect(0, 0, w, h);
+for (let x = 0; x < w; x += sliceWidth) {
+  const shiftY = Math.sin(x * 0.008 + timeVal * 0.004) * sliceAmplitude 
+               + Math.sin(x * 0.03 - timeVal * 0.002) * (sliceAmplitude * 0.3);
+  slicedTextCtx.drawImage(
+    offscreenText, // 原始未切片的白字遮罩
+    x, 0, sliceWidth, h, // 源切片区域
+    x, shiftY, sliceWidth, h // 带有Y偏移的目标切片区域
+  );
+}
+
+// 3. 将文字线条层以相同切片规则绘制合并到主 canvas 上，使得边界与线条同时发生断裂
+for (let x = 0; x < w; x += sliceWidth) {
+  const shiftY = Math.sin(x * 0.008 + timeVal * 0.004) * sliceAmplitude 
+               + Math.sin(x * 0.03 - timeVal * 0.002) * (sliceAmplitude * 0.3);
+  ctx.drawImage(
+    textCanvas, // 原始文字内声波层 (已进行 globalCompositeOperation 截取)
+    x, 0, sliceWidth, h,
+    x, shiftY, sliceWidth, h
+  );
+}
+```
+
+【AI 辅助与自主决策声明 (AI USE ACKNOWLEDGEMENT)】
+* AI辅助部分: 垂直切片循环渲染性能优化、图像保存时的缩放因子映射及右侧控制台菜单中英双语标签布局生成由AI协助完成。
+* 自主设计决策: 团队做出了放弃常规中心排版、将文字 Y 轴中线放置在 X 正半轴（Y占位 72% - 85% 左右）的艺术决策，并引入了“切片步长（Slice Width）”调节，使得评审能够手动掌控画面是呈现温和扭曲还是极具张力的破碎字形。
+
+【开发日志摘要 (COMMIT LOG - EDITION 02)】
+- Commit 7: Initialized Edition 02 directory. Changed default placeholder word to "Shanghai".
+  (建立Edition 02分支。将默认显示词更改为“Shanghai”。)
+- Commit 8: Implemented column-by-column vertical slice shift algorithm on text lines and mask rendering.
+  (开发双重离屏切片重绘系统，使字形边界与圈线产生像素级步进锯齿错位，还原样张效果。)
+- Commit 9: Shifted text default Y coordinates from center (50%) to circle's positive X-axis (72% to 85%). Added Text Y slider control.
+  (将文字坐标由屏幕正中平移至声波圆心正X轴附近，新增文本垂直高度调节功能。)
+- Commit 10: Translated all floating sidebar UI controls, labels, and descriptions into a full bilingual format.
+  (对右侧 floating 控制面板内的所有参数、标签和信息页说明进行全面的中英文双语对照翻译。)
+
+
+------------------------------------------------------------------------
+第三板块：PROPOSAL / 最终方案与落地规划 (SPREAD 5 OF 5)
+------------------------------------------------------------------------
+
+【永久安装与落地参数 (PERMANENT INSTALLATION & PLACEMENT)】
+- 建筑大尺度安装定位: 装置设计长12米，高3米，安装在上海南站大厅核心换乘区域。墙面涂刷纳米消光吸音黑色复合材料，以呼应物理声学并提升高对比度白色投影画面的视觉冲击力。
+- 硬件设备方案 (PLACEMENT AND HARDWARE):
+  * 投影系统: 2台 Panasonic PT-RQ35K 激光工程投影机 (30,000流明，4K分辨率，吊顶钢结构加固防护吊装，防尘防静电外壳)。
+  * 主控电脑: 1台 研华(Advantech) 工业级无风扇边缘计算微型计算机 (Intel Core i7, 16GB RAM, RTX3060独显，预装定制化Edge kiosk纯净浏览器内核)。
+  * 传感网络: 1路 乐信集成式PoE网络数字声级传感器 + 1路 换乘安全客流统计高清网络相机。
+  * 能源及布线: 240V 16A 独立交流电源回路，Cat6 STP 屏蔽线局域组网。
+
+【四大维度评估自评 (FOUR LENSES)】
+
+* 01 空间可读性 (SPATIAL LEGIBILITY):
+  文字“Shanghai”字样被移至画面下方的X轴正半轴，与候车大厅人眼视平线高度（约1.6m-2.2m）完美重合，大幅提升了贴近站立时的空间可读性。中英文对照控制面板支持现场即时调试，线条基准粗细和切片步长均可微调，确保无论环境采光如何改变，图形都能在高频锯齿撕裂状态下依然具备强劲的字符识别度。
+
+* 02 响应性能 (RESPONSIVENESS):
+  噪音声级变化不仅驱动整体文字偏移，还实时调节垂直切片的起伏振幅。数据以小时为基准平滑过渡，实时声波颤震则以 60 FPS 响应。用户一键点击“Freeze 画面”后，时间变量锁定，动态波形和切片锯齿运动瞬间静止，极大地满足了现场拍摄和评审静态观赏的需求。
+
+* 03 公共互动体验 (PUBLIC ENCOUNTER):
+  数据驱动的错位字形视觉语言，映射了上海南站大空间内由于列车到发引起的环境压力变化。圆形水波呼应南站圆型建筑穹顶，拉近了艺术与物理环境的距离。全新的“Save A-Size Image”图像保存功能，支持通勤观众或评委以 1:1.414 黄金比例随时导出高清数字海报，从而将公共场所的艺术体验延伸到了个人的数字媒介中。
+
+* 04 长期可维护性 (PERMANENCE):
+  设备集成在防尘、温控、IP54级的金属外箱内。深夜自动进入关机休眠。工业级主控PC配备硬件级看门狗（Watchdog）电路，发生运行故障时能于10秒内自动完成系统自愈并重新加载全屏大字投影。
+
+【致谢与代码仓库 (CREDITS AND REPOSITORY)】
+* 团队分工 (Roles):
+  - 创意概念/现场规划/文字撰写: [您的名字 / Your Name]
+  - 技术实现/Canvas算法调试: [您的名字 / Your Name]
+* 指导老师 (Supervising Staff):
+  - [指导老师名字 / Advisor Name]
+* 演示代码仓库链接 (GitHub Repository Link):
+  - https://github.com/[您的GitHub用户名]/resonating-echoes-installation
+
+========================================================================
+第二版报告文档编写完毕。已放入 Edition02 文件夹。
+========================================================================

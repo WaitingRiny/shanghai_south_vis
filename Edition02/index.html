@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resonating Echoes - Shanghai South Station Data Typography Installation</title>
+  <!-- Load Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;600;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #050508;
+      --panel-bg: rgba(10, 10, 15, 0.7);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent-blue: #00E5FF;
+      --accent-purple: #9d4edd;
+      --accent-amber: #FF9100;
+      --accent-red: #ff0055;
+      --accent-green: #00E676;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text-main);
+    }
+
+    /* Main layout */
+    #app-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+    }
+
+    /* Canvas styling */
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      background-color: #000;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Floating UI elements */
+    .overlay-ui {
+      position: absolute;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* Sidebar controls */
+    #control-panel {
+      top: 20px;
+      right: 20px;
+      bottom: 20px;
+      width: 390px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      pointer-events: auto;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      overflow-y: auto;
+    }
+
+    #control-panel.collapsed {
+      transform: translateX(calc(100% + 40px));
+      opacity: 0;
+    }
+
+    /* Toggle UI button */
+    #toggle-ui-btn {
+      top: 20px;
+      right: 20px;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 11;
+    }
+
+    #toggle-ui-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    #toggle-ui-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--text-main);
+      transition: transform 0.3s ease;
+    }
+
+    #toggle-ui-btn.active svg {
+      transform: rotate(180deg);
+    }
+
+    /* Live Data Placard (In space label) */
+    #placard {
+      bottom: 30px;
+      left: 30px;
+      width: 330px;
+      background: rgba(0, 0, 0, 0.8);
+      border-left: 3px solid var(--accent-blue);
+      border-radius: 4px;
+      padding: 16px 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      transition: all 0.3s ease;
+    }
+
+    /* Header styling */
+    .panel-header {
+      border-bottom: 1px solid var(--panel-border);
+      padding-bottom: 16px;
+    }
+
+    .panel-title {
+      font-size: 1.25rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: linear-gradient(45deg, #fff, var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .panel-subtitle {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* Action Buttons Row (Freeze & Save) */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 5px;
+    }
+
+    .btn-action {
+      font-size: 0.72rem;
+      padding: 12px 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      text-align: center;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-family: inherit;
+    }
+
+    .btn-freeze {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
+      color: var(--text-main);
+    }
+
+    .btn-freeze.active {
+      background: rgba(255, 0, 85, 0.15);
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+    }
+
+    .btn-save {
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      color: var(--accent-blue);
+    }
+
+    .btn-save:hover {
+      background: var(--accent-blue);
+      color: #000;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+    }
+
+    /* Section styling */
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Form controls */
+    input[type="text"] {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent-blue);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
+    }
+
+    /* Timeline and controls */
+    .timeline-container {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .playback-buttons {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
+      color: #fff;
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-transform: uppercase;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn.active {
+      background: var(--accent-blue);
+      color: #000;
+      border-color: var(--accent-blue);
+    }
+
+    .btn-play {
+      flex: 1;
+    }
+
+    /* Slider styling */
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.3;
+    }
+
+    .slider-value {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      transition: background 0.3s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+      background: var(--accent-blue);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+    }
+
+    /* Data display stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .stat-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: border-color 0.3s ease;
+    }
+
+    .stat-box.highlight {
+      border-color: rgba(0, 229, 255, 0.3);
+    }
+
+    .stat-label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      line-height: 1.3;
+    }
+
+    .stat-val {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* Mode selector tabs */
+    .tabs {
+      display: flex;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 3px;
+      border: 1px solid var(--panel-border);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .tab.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    /* Tab Contents */
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    /* Help / Info styles */
+    .info-paragraph {
+      font-size: 0.75rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    .info-item {
+      margin-bottom: 10px;
+    }
+
+    .info-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #fff;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    /* Placard texts */
+    .placard-title {
+      font-size: 0.9rem;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .placard-desc {
+      font-size: 0.72rem;
+      line-height: 1.4;
+      color: #bbb;
+      margin-top: 8px;
+    }
+
+    .placard-data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      font-family: monospace;
+      font-size: 0.65rem;
+      color: var(--accent-blue);
+    }
+
+    /* Color switch toggle */
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider-switch {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      transition: .4s;
+      border-radius: 20px;
+      border: 1px solid var(--panel-border);
+    }
+
+    .slider-switch:before {
+      position: absolute;
+      content: "";
+      height: 12px;
+      width: 12px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider-switch {
+      background-color: var(--accent-blue);
+    }
+
+    input:checked + .slider-switch:before {
+      transform: translateX(20px);
+      background-color: #000;
+    }
+
+    /* Center indicator overlay */
+    #center-indicator {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border: 1.5px dashed var(--accent-blue);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      display: none;
+      z-index: 2;
+    }
+    
+    #center-indicator::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 6px;
+      height: 6px;
+      background: var(--accent-blue);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Tooltip / Hint overlay */
+    #interaction-hint {
+      position: absolute;
+      bottom: 30px;
+      right: 30px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      background: rgba(0, 0, 0, 0.5);
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--panel-border);
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    /* Scrollbar Styling for control-panel */
+    #control-panel::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    #control-panel::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    #control-panel::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+    }
+
+    #control-panel::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-container">
+    
+    <!-- Canvas Visual Container -->
+    <div id="canvas-container">
+      <canvas id="main-canvas"></canvas>
+    </div>
+
+    <!-- Dash Center Indicator (visible during dragging) -->
+    <div id="center-indicator"></div>
+
+    <!-- Dynamic Hint for Mouse Interaction -->
+    <div id="interaction-hint" class="overlay-ui">💡 点击或拖拽画布可以改变声波圆心 | Click or drag to move center</div>
+
+    <!-- Site Placard (In space label) -->
+    <div id="placard" class="overlay-ui">
+      <div class="placard-title">RESONATING ECHOES</div>
+      <div class="placard-desc" id="placard-desc-text">
+        本装置提取上海南站出发大厅的环境数据。同心声波线圈呼应南站圆顶钢结构穹顶，并受环境噪音声级、客流量、PM2.5浓度的影响在X正半轴附近产生错位与高频颤动。
+      </div>
+      <div class="placard-data-row">
+        <span id="placard-timestamp">UTC+8 12:00:00</span>
+        <span id="placard-metrics">88dB | 145PPL</span>
+      </div>
+    </div>
+
+    <!-- Toggle Sidebar UI Button -->
+    <div id="toggle-ui-btn" class="overlay-ui" onclick="toggleUI()">
+      <svg viewBox="0 0 24 24">
+        <!-- Settings/Menu Icon -->
+        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.04,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+      </svg>
+    </div>
+
+    <!-- Floating Control Panel (Glassmorphism Sidebar - Bilingual) -->
+    <div id="control-panel" class="overlay-ui">
+      
+      <!-- Panel Header -->
+      <div class="panel-header">
+        <h1 class="panel-title">Resonating Echoes</h1>
+        <p class="panel-subtitle">Shanghai South Station Data Typo Controller</p>
+      </div>
+
+      <!-- Freezing & Image Export Actions (Bilingual) -->
+      <div class="actions-grid">
+        <button class="btn-action btn-freeze" id="visual-freeze-btn" onclick="toggleVisualFreeze()">
+          <span id="freeze-btn-icon">⏸</span> <span id="freeze-btn-text">暂停画面 | Freeze</span>
+        </button>
+        <button class="btn-action btn-save" onclick="exportASizeImage()">
+          <span>💾</span> <span>保存 A-Size | Save PNG</span>
+        </button>
+      </div>
+
+      <!-- Tab Selectors -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this, 'tab-data')">数据 | DATA</div>
+        <div class="tab" onclick="switchTab(this, 'tab-visuals')">视觉 | STYLE</div>
+        <div class="tab" onclick="switchTab(this, 'tab-info')">说明 | INFO</div>
+      </div>
+
+      <!-- TAB 1: DATA CONTROL PANEL -->
+      <div id="tab-data" class="tab-content active">
+        <!-- Text input (Shanghai as default) -->
+        <div class="input-group">
+          <label class="section-title">文本投影输入 | Text Input</label>
+          <input type="text" id="text-input" value="Shanghai" placeholder="输入任意英文单词... / Enter word..." oninput="updateWord(this.value)">
+        </div>
+
+        <!-- Mode selector: CSV or manual override -->
+        <div class="input-group">
+          <label class="section-title">运行模式 | Running Mode</label>
+          <div class="playback-buttons">
+            <button class="btn btn-play active" id="mode-csv-btn" onclick="setMode('csv')">CSV 实时数据 | CSV</button>
+            <button class="btn btn-play" id="mode-manual-btn" onclick="setMode('manual')">手动微调 | Manual</button>
+          </div>
+        </div>
+
+        <!-- CSV Timeline Control (Only editable in CSV mode) -->
+        <div class="timeline-container" id="csv-timeline-group">
+          <div class="section-title">
+            <span>CSV 24h 时间轴线 | CSV 24h Timeline</span>
+            <span id="csv-current-time" style="color: var(--accent-blue);">08:00</span>
+          </div>
+          
+          <div class="slider-row">
+            <input type="range" id="timeline-slider" min="0" max="18" value="2" step="1" oninput="scrubCSV(this.value)">
+          </div>
+
+          <div class="playback-buttons" style="margin-top: 6px;">
+            <button class="btn btn-play" id="play-pause-btn" onclick="togglePlay()">
+              <span id="play-btn-icon">⏸</span> <span id="play-btn-text">暂停播放 | Pause CSV</span>
+            </button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 0.65rem; color: var(--text-muted);">速度 | Speed</span>
+              <input type="range" id="play-speed-slider" min="1" max="10" value="3" style="width: 70px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Environment Metrics (Bilingual) -->
+        <div class="input-group">
+          <label class="section-title">
+            <span id="metrics-title">环境实时指标 | Live Metrics</span>
+            <span id="manual-override-tag" style="color: var(--accent-red); font-size: 0.65rem; display: none;">手动覆盖 | Manual</span>
+          </label>
+          
+          <div class="stats-grid">
+            <div class="stat-box" id="box-noise">
+              <span class="stat-label">🔊 噪音声级 (位移)<br>Noise Level (Offset)</span>
+              <span class="stat-val" id="val-noise">88 dB</span>
+            </div>
+            <div class="stat-box" id="box-flow">
+              <span class="stat-label">👥 客流密度 (间距)<br>Pedestrian Flow (Spacing)</span>
+              <span class="stat-val" id="val-flow">145 人/分</span>
+            </div>
+            <div class="stat-box" id="box-pm25">
+              <span class="stat-label">😷 空气PM2.5 (粗细)<br>PM2.5 Index (Width)</span>
+              <span class="stat-val" id="val-pm25">35 μg/m³</span>
+            </div>
+            <div class="stat-box" id="box-wind">
+              <span class="stat-label">🍃 风速强度 (流速)<br>Wind Speed (Velocity)</span>
+              <span class="stat-val" id="val-wind">3.2 米/秒</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual Sliders (Bilingual) -->
+        <div id="manual-sliders-group" style="display: none; flex-direction: column; gap: 14px; margin-top: 4px;">
+          <div class="slider-row">
+            <div class="slider-labels">
+              <span>噪音声级 (位移) | Noise Level (dB)</span>
+              <span class="slider-value"><span id="slider-val-noise">88</span> dB</span>
+            </div>
+            <input type="range" id="slider-noise" min="50" max="105" value="88" oninput="manualParamChange('noise', this.value)">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-labels">
+              <span>客流密度 (间距) | Pedestrian Flow (PPL/min)</span>
+              <span class="slider-value"><span id="slider-val-flow">145</span> 人/分</span>
+            </div>
+            <input type="range" id="slider-flow" min="15" max="220" value="145" oninput="manualParamChange('flow', this.value)">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-labels">
+              <span>PM2.5指数 (线宽) | PM2.5 (μg/m³)</span>
+              <span class="slider-value"><span id="slider-val-pm25">35</span> μg/m³</span>
+            </div>
+            <input type="range" id="slider-pm25" min="10" max="200" value="35" oninput="manualParamChange('pm25', this.value)">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-labels">
+              <span>空气流速 (流动) | Air Velocity (m/s)</span>
+              <span class="slider-value"><span id="slider-val-wind">3.2</span> m/s</span>
+            </div>
+            <input type="range" id="slider-wind" min="0.2" max="12.0" value="3.2" step="0.1" oninput="manualParamChange('wind', this.value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: VISUAL FINE-TUNING (Bilingual sliders) -->
+      <div id="tab-visuals" class="tab-content">
+        <div class="slider-row">
+          <div class="slider-labels">
+            <span>背景线条基准粗细<br>Background Line Width</span>
+            <span class="slider-value"><span id="slider-val-bgwidth">2.5</span> px</span>
+          </div>
+          <input type="range" id="slider-bgwidth" min="0.5" max="8.0" value="2.5" step="0.1" oninput="updateVisualParam('bgWidth', this.value)">
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-labels">
+            <span>文字线条基准粗细<br>Text Line Width</span>
+            <span class="slider-value"><span id="slider-val-txtwidth">6.0</span> px</span>
+          </div>
+          <input type="range" id="slider-txtwidth" min="1.0" max="15.0" value="6.0" step="0.2" oninput="updateVisualParam('txtWidth', this.value)">
+        </div>
+
+        <!-- Text Vertical Position Slider (Requested: move to X positive axis) -->
+        <div class="slider-row">
+          <div class="slider-labels">
+            <span>文本垂直位置 Y轴<br>Text Vertical Position (Y)</span>
+            <span class="slider-value"><span id="slider-val-txty">72</span>%</span>
+          </div>
+          <input type="range" id="slider-txty" min="40" max="95" value="72" oninput="updateVisualParam('textYPercent', this.value)">
+        </div>
+
+        <!-- Vertical Slice Width Slider for misalignment (Requested: jagged breaks) -->
+        <div class="slider-row">
+          <div class="slider-labels">
+            <span>切片错位宽度 (线条抖动)<br>Slice Width (Misalignment Jitter)</span>
+            <span class="slider-value"><span id="slider-val-slice">8.0</span> px</span>
+          </div>
+          <input type="range" id="slider-slice" min="2" max="30" value="8" step="0.5" oninput="updateVisualParam('sliceWidth', this.value)">
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-labels">
+            <span>文字形变偏量角度<br>Displacement Phase Angle</span>
+            <span class="slider-value"><span id="slider-val-angle">90</span>°</span>
+          </div>
+          <input type="range" id="slider-angle" min="0" max="360" value="90" oninput="updateVisualParam('angle', this.value)">
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-labels">
+            <span>文字物理颤动频率<br>Wiggle Osciliation Speed</span>
+            <span class="slider-value"><span id="slider-val-wiggle">1.0</span>x</span>
+          </div>
+          <input type="range" id="slider-wiggle" min="0" max="3" value="1.0" step="0.1" oninput="updateVisualParam('wiggle', this.value)">
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-labels">
+            <span>声波发散线距缩放<br>Wave Ring Spacing Zoom</span>
+            <span class="slider-value"><span id="slider-val-zoom">1.0</span>x</span>
+          </div>
+          <input type="range" id="slider-zoom" min="0.5" max="2.0" value="1.0" step="0.05" oninput="updateVisualParam('zoom', this.value)">
+        </div>
+
+        <div class="toggle-row">
+          <span style="font-size: 0.82rem; font-weight: 600;">光晕效果 | Neon Bloom Glow</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-glow" onchange="updateVisualParam('glow', this.checked)">
+            <span class="slider-switch"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <span style="font-size: 0.82rem; font-weight: 600;">炫彩数据映射 | Extended Colors</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-colors" onchange="updateVisualParam('colorMode', this.checked)">
+            <span class="slider-switch"></span>
+          </label>
+        </div>
+
+        <button class="btn" style="width: 100%; margin-top: 10px;" onclick="resetCenter()">重置声波圆心 | Reset Center</button>
+      </div>
+
+      <!-- TAB 3: PROJECT INFORMATION (Bilingual) -->
+      <div id="tab-info" class="tab-content">
+        <div class="info-item">
+          <span class="info-label">项目名称 | Project Title</span>
+          <p class="info-paragraph">Resonating Echoes (共鸣回响 - 城市数据视觉投影装置)</p>
+        </div>
+        <div class="info-item">
+          <span class="info-label">核心理念 | Premise</span>
+          <p class="info-paragraph">
+            本交互装置提取城市交通枢纽的环境噪音与人流波动数据，通过重构与位移同心声波圆环，生成具有动态呼吸感的数据排版文字，唤醒公众对隐性环境负荷的关注。<br>
+            This interactive data-driven installation maps ambient noise and commuter flows onto displaced concentric soundwave rings, reflecting environmental strain.
+          </p>
+        </div>
+        <div class="info-item">
+          <span class="info-label">场地媒介与设计呼应 | Site & Architectural Context</span>
+          <p class="info-paragraph">
+            永久装设于<strong>上海南站</strong>主出发大厅核心墙面。同心圆环结构设计在形态上呼应了南站宏伟独特的圆形穹顶钢结构建筑，实现了视觉艺术、环境声场与地标建筑空间的有机结合。<br>
+            Permanently installed in the departure hall of Shanghai South Railway Station. The concentric rings echo the station's iconic circular dome steel roof.
+          </p>
+        </div>
+        <div class="info-item">
+          <span class="info-label">映射逻辑 | Data Mappings</span>
+          <p class="info-paragraph" style="font-size: 0.72rem; line-height: 1.4;">
+            - <strong>噪音声级 &rarr; 文字扭曲位移与垂直切片错位 (Noise Level &rarr; Jagged Shredding):</strong> 噪音越高，文字内部线条越呈现断裂错位，边缘呈现毛糙的步进级切割，错落无序。<br>
+            - <strong>客流密度 &rarr; 线条频率与密度 (Pedestrian Flow &rarr; Density):</strong> 客流量大时，圆环间隔变窄，线条密集压抑；反之线条舒缓宽敞。<br>
+            - <strong>PM2.5指数 &rarr; 线条厚度与晕染 (PM2.5 &rarr; Line Width):</strong> PM2.5浓度高时，线条变粗且边缘模糊泛红，隐喻雾霾空气的浑浊。<br>
+            - <strong>空气流速 &rarr; 声波外传流速 (Wind Speed &rarr; Flow Speed):</strong> 风速增加，同心圆环向外发散扩散的动画速度同步加快。
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // --- Embedded CSV Fallback Data (Shanghai South Station Representative Log) ---
+    const csvFallbackData = [
+      { Timestamp: "06:00", Noise_Level_dB: 52, Pedestrian_Flow: 24, PM25_Index: 18, Wind_Speed_ms: 1.2 },
+      { Timestamp: "07:00", Noise_Level_dB: 65, Pedestrian_Flow: 58, PM25_Index: 22, Wind_Speed_ms: 1.5 },
+      { Timestamp: "08:00", Noise_Level_dB: 88, Pedestrian_Flow: 145, PM25_Index: 35, Wind_Speed_ms: 3.2 },
+      { Timestamp: "09:00", Noise_Level_dB: 92, Pedestrian_Flow: 172, PM25_Index: 42, Wind_Speed_ms: 4.5 },
+      { Timestamp: "10:00", Noise_Level_dB: 78, Pedestrian_Flow: 98, PM25_Index: 40, Wind_Speed_ms: 3.8 },
+      { Timestamp: "11:00", Noise_Level_dB: 74, Pedestrian_Flow: 82, PM25_Index: 38, Wind_Speed_ms: 2.7 },
+      { Timestamp: "12:00", Noise_Level_dB: 79, Pedestrian_Flow: 105, PM25_Index: 45, Wind_Speed_ms: 2.5 },
+      { Timestamp: "13:00", Noise_Level_dB: 76, Pedestrian_Flow: 89, PM25_Index: 48, Wind_Speed_ms: 2.1 },
+      { Timestamp: "14:00", Noise_Level_dB: 73, Pedestrian_Flow: 81, PM25_Index: 52, Wind_Speed_ms: 1.8 },
+      { Timestamp: "15:00", Noise_Level_dB: 75, Pedestrian_Flow: 85, PM25_Index: 55, Wind_Speed_ms: 2.0 },
+      { Timestamp: "16:00", Noise_Level_dB: 78, Pedestrian_Flow: 95, PM25_Index: 50, Wind_Speed_ms: 2.3 },
+      { Timestamp: "17:00", Noise_Level_dB: 84, Pedestrian_Flow: 130, PM25_Index: 48, Wind_Speed_ms: 3.5 },
+      { Timestamp: "18:00", Noise_Level_dB: 94, Pedestrian_Flow: 185, PM25_Index: 52, Wind_Speed_ms: 4.8 },
+      { Timestamp: "19:00", Noise_Level_dB: 90, Pedestrian_Flow: 160, PM25_Index: 55, Wind_Speed_ms: 4.2 },
+      { Timestamp: "20:00", Noise_Level_dB: 82, Pedestrian_Flow: 115, PM25_Index: 58, Wind_Speed_ms: 3.0 },
+      { Timestamp: "21:00", Noise_Level_dB: 77, Pedestrian_Flow: 90, PM25_Index: 62, Wind_Speed_ms: 2.4 },
+      { Timestamp: "22:00", Noise_Level_dB: 70, Pedestrian_Flow: 68, PM25_Index: 60, Wind_Speed_ms: 1.9 },
+      { Timestamp: "23:00", Noise_Level_dB: 60, Pedestrian_Flow: 42, PM25_Index: 58, Wind_Speed_ms: 1.4 },
+      { Timestamp: "00:00", Noise_Level_dB: 50, Pedestrian_Flow: 15, PM25_Index: 52, Wind_Speed_ms: 1.0 }
+    ];
+
+    let environmentalData = [];
+    let currentDataIndex = 2; // Default starting at 08:00
+    let isPlaying = true;
+    let isVisualFrozen = false; // Freeze the animation/wiggle (Requested)
+    let runMode = 'csv'; // 'csv' or 'manual'
+    let lastTime = 0;
+    let accumulatedTime = 0;
+    let frozenTimestamp = 0; // Record the timestamp when visual freezes
+    
+    // --- Canvas Core Setup ---
+    const canvas = document.getElementById('main-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Offscreen Canvas for Un-sliced Text Mask
+    const offscreenText = document.createElement('canvas');
+    const oCtx = offscreenText.getContext('2d');
+
+    // Offscreen Canvas for Sliced Text Mask (Used to hollow background precisely)
+    const slicedTextCanvas = document.createElement('canvas');
+    const slicedTextCtx = slicedTextCanvas.getContext('2d');
+
+    // Offscreen Canvas for Background Lines
+    const bgCanvas = document.createElement('canvas');
+    const bgCtx = bgCanvas.getContext('2d');
+
+    // Offscreen Canvas for Text Lines
+    const textCanvas = document.createElement('canvas');
+    const textCtx = textCanvas.getContext('2d');
+
+    // Canvas State and Settings (Default text: Shanghai)
+    let text = "Shanghai";
+    let cx = 0; // Default center X (bottom-left)
+    let cy = 0; // Default center Y (bottom-left)
+    let isDraggingCenter = false;
+    let activeMetrics = { noise: 88, flow: 145, pm25: 35, wind: 3.2 };
+    
+    // Visual Parameters (Overrides & Fine-tunings)
+    let visualParams = {
+      bgWidth: 2.5,     // Base width for background circles
+      txtWidth: 6.0,    // Base width for text circles
+      textYPercent: 0.72,// Text Y Position (Default 72%, moved near the bottom-left circular origin axis)
+      sliceWidth: 8.0,  // Slice width in pixels (Default 8.0px, controls vertical shredding misalignment)
+      angle: 90,        // Displacement direction
+      wiggle: 1.0,      // Scale of dynamic wiggling
+      zoom: 1.0,        // Scaling of ripples
+      glow: false,      // High premium bloom glow effect
+      colorMode: false  // Extended Colors
+    };
+
+    // Dynamic wave phase
+    let wavePhase = 0;
+
+    // --- Window Resize Handler ---
+    function resizeCanvases() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      // Set dimensions of visible canvas
+      canvas.width = w;
+      canvas.height = h;
+
+      // Match offscreens
+      offscreenText.width = w;
+      offscreenText.height = h;
+      slicedTextCanvas.width = w;
+      slicedTextCanvas.height = h;
+      bgCanvas.width = w;
+      bgCanvas.height = h;
+      textCanvas.width = w;
+      textCanvas.height = h;
+
+      // Position center in bottom left corner (like Ref image)
+      if (cx === 0 && cy === 0) {
+        cx = w * -0.05;
+        cy = h * 1.05;
+      }
+    }
+    
+    window.addEventListener('resize', resizeCanvases);
+
+    // --- Initialization & Data Fetching ---
+    async function init() {
+      resizeCanvases();
+      
+      // Load Font before rendering to avoid fallback font sizing issues
+      document.fonts.ready.then(() => {
+        requestAnimationFrame(renderLoop);
+      });
+
+      // Try fetching data.csv
+      try {
+        const response = await fetch('data.csv');
+        if (!response.ok) throw new Error("File not found");
+        const csvText = await response.text();
+        environmentalData = parseCSV(csvText);
+        console.log("CSV loaded successfully:", environmentalData);
+      } catch (err) {
+        console.warn("Unable to fetch CSV, falling back to embedded dataset.", err);
+        environmentalData = csvFallbackData;
+      }
+
+      // Sync UI with initial state
+      updateUIWithData(environmentalData[currentDataIndex]);
+      
+      // Mouse interaction for circle center dragging
+      setupMouseEvents();
+
+      // Show interaction hint and fade it out
+      setTimeout(() => {
+        const hint = document.getElementById('interaction-hint');
+        if (hint) hint.style.opacity = '0';
+      }, 5000);
+    }
+
+    // Parse simple CSV text
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      const headers = lines[0].split(',');
+      const data = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i]) continue;
+        const values = lines[i].split(',');
+        const row = {};
+        headers.forEach((h, idx) => {
+          const val = values[idx].trim();
+          row[h.trim()] = isNaN(val) ? val : parseFloat(val);
+        });
+        data.push(row);
+      }
+      return data;
+    }
+
+    // --- UI Controls ---
+    function switchTab(el, tabId) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    function toggleUI() {
+      const panel = document.getElementById('control-panel');
+      const btn = document.getElementById('toggle-ui-btn');
+      panel.classList.toggle('collapsed');
+      btn.classList.toggle('active');
+      
+      const hint = document.getElementById('interaction-hint');
+      if (panel.classList.contains('collapsed')) {
+        hint.innerHTML = "💡 点击或拖拽画布可以改变声波圆心 | Click or drag to move center";
+        hint.style.opacity = '0.8';
+      } else {
+        hint.style.opacity = '0';
+      }
+    }
+
+    function updateWord(newWord) {
+      text = newWord ? newWord.trim() : "Shanghai";
+    }
+
+    function setMode(mode) {
+      runMode = mode;
+      document.getElementById('mode-csv-btn').classList.toggle('active', mode === 'csv');
+      document.getElementById('mode-manual-btn').classList.toggle('active', mode === 'manual');
+      
+      const csvTimeline = document.getElementById('csv-timeline-group');
+      const manualSliders = document.getElementById('manual-sliders-group');
+      const manualTag = document.getElementById('manual-override-tag');
+      const metricTitle = document.getElementById('metrics-title');
+
+      if (mode === 'csv') {
+        csvTimeline.style.display = 'flex';
+        manualSliders.style.display = 'none';
+        manualTag.style.display = 'none';
+        metricTitle.innerText = "当前环境实时指标 | Live Metrics";
+        updateUIWithData(environmentalData[currentDataIndex]);
+      } else {
+        csvTimeline.style.display = 'none';
+        manualSliders.style.display = 'flex';
+        manualTag.style.display = 'inline-block';
+        metricTitle.innerText = "手动测试指标 | Manual Override";
+        syncManualValuesFromSliders();
+      }
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      const playIcon = document.getElementById('play-btn-icon');
+      const playText = document.getElementById('play-btn-text');
+      
+      if (isPlaying) {
+        playIcon.innerText = "⏸";
+        playText.innerText = "暂停播放 | Pause CSV";
+      } else {
+        playIcon.innerText = "▶";
+        playText.innerText = "自动循环 | Play CSV";
+      }
+    }
+
+    function toggleVisualFreeze() {
+      isVisualFrozen = !isVisualFrozen;
+      const btn = document.getElementById('visual-freeze-btn');
+      const icon = document.getElementById('freeze-btn-icon');
+      const textEl = document.getElementById('freeze-btn-text');
+      
+      btn.classList.toggle('active', isVisualFrozen);
+      if (isVisualFrozen) {
+        icon.innerText = "▶";
+        textEl.innerText = "恢复画面 | Play";
+        frozenTimestamp = lastTime;
+      } else {
+        icon.innerText = "⏸";
+        textEl.innerText = "暂停画面 | Freeze";
+      }
+    }
+
+    function scrubCSV(index) {
+      currentDataIndex = parseInt(index);
+      if (isPlaying) togglePlay();
+      
+      const activeRow = environmentalData[currentDataIndex];
+      updateUIWithData(activeRow);
+    }
+
+    function updateUIWithData(dataRow) {
+      if (!dataRow) return;
+      
+      document.getElementById('csv-current-time').innerText = dataRow.Timestamp;
+      document.getElementById('timeline-slider').value = currentDataIndex;
+
+      activeMetrics.noise = dataRow.Noise_Level_dB;
+      activeMetrics.flow = dataRow.Pedestrian_Flow;
+      activeMetrics.pm25 = dataRow.PM25_Index;
+      activeMetrics.wind = dataRow.Wind_Speed_ms;
+
+      document.getElementById('val-noise').innerText = `${activeMetrics.noise} dB`;
+      document.getElementById('val-flow').innerText = `${activeMetrics.flow} 人/分`;
+      document.getElementById('val-pm25').innerText = `${activeMetrics.pm25} μg/m³`;
+      document.getElementById('val-wind').innerText = `${activeMetrics.wind} m/s`;
+
+      triggerHudHighlight();
+
+      document.getElementById('placard-timestamp').innerText = `LIVE UTC+8 ${dataRow.Timestamp}:00`;
+      document.getElementById('placard-metrics').innerText = `${activeMetrics.noise}dB | ${activeMetrics.flow}PPL | PM2.5: ${activeMetrics.pm25}`;
+
+      document.getElementById('slider-noise').value = activeMetrics.noise;
+      document.getElementById('slider-flow').value = activeMetrics.flow;
+      document.getElementById('slider-pm25').value = activeMetrics.pm25;
+      document.getElementById('slider-wind').value = activeMetrics.wind;
+
+      document.getElementById('slider-val-noise').innerText = activeMetrics.noise;
+      document.getElementById('slider-val-flow').innerText = activeMetrics.flow;
+      document.getElementById('slider-val-pm25').innerText = activeMetrics.pm25;
+      document.getElementById('slider-val-wind').innerText = activeMetrics.wind;
+    }
+
+    function triggerHudHighlight() {
+      const boxes = document.querySelectorAll('.stat-box');
+      boxes.forEach(b => {
+        b.classList.add('highlight');
+        setTimeout(() => b.classList.remove('highlight'), 300);
+      });
+    }
+
+    function syncManualValuesFromSliders() {
+      activeMetrics.noise = parseInt(document.getElementById('slider-noise').value);
+      activeMetrics.flow = parseInt(document.getElementById('slider-flow').value);
+      activeMetrics.pm25 = parseInt(document.getElementById('slider-pm25').value);
+      activeMetrics.wind = parseFloat(document.getElementById('slider-wind').value);
+
+      document.getElementById('val-noise').innerText = `${activeMetrics.noise} dB`;
+      document.getElementById('val-flow').innerText = `${activeMetrics.flow} 人/分`;
+      document.getElementById('val-pm25').innerText = `${activeMetrics.pm25} μg/m³`;
+      document.getElementById('val-wind').innerText = `${activeMetrics.wind} m/s`;
+      
+      document.getElementById('placard-timestamp').innerText = `MANUAL OVERRIDE`;
+      document.getElementById('placard-metrics').innerText = `${activeMetrics.noise}dB | ${activeMetrics.flow}PPL | PM2.5: ${activeMetrics.pm25}`;
+    }
+
+    function manualParamChange(param, value) {
+      if (runMode !== 'manual') {
+        setMode('manual');
+      }
+      
+      if (param === 'noise') {
+        activeMetrics.noise = parseInt(value);
+        document.getElementById('slider-val-noise').innerText = value;
+      } else if (param === 'flow') {
+        activeMetrics.flow = parseInt(value);
+        document.getElementById('slider-val-flow').innerText = value;
+      } else if (param === 'pm25') {
+        activeMetrics.pm25 = parseInt(value);
+        document.getElementById('slider-val-pm25').innerText = value;
+      } else if (param === 'wind') {
+        activeMetrics.wind = parseFloat(value);
+        document.getElementById('slider-val-wind').innerText = value;
+      }
+
+      document.getElementById('val-' + param).innerText = 
+        param === 'wind' ? `${value} m/s` : 
+        param === 'flow' ? `${value} 人/分` : 
+        param === 'pm25' ? `${value} μg/m³` : `${value} dB`;
+        
+      document.getElementById('placard-metrics').innerText = `${activeMetrics.noise}dB | ${activeMetrics.flow}PPL | PM2.5: ${activeMetrics.pm25}`;
+    }
+
+    function updateVisualParam(param, value) {
+      if (param === 'bgWidth' || param === 'txtWidth' || param === 'wiggle' || param === 'zoom' || param === 'sliceWidth') {
+        visualParams[param] = parseFloat(value);
+      } else if (param === 'textYPercent') {
+        visualParams[param] = parseFloat(value) / 100;
+      } else {
+        visualParams[param] = value;
+      }
+      
+      if (param === 'angle') {
+        document.getElementById('slider-val-angle').innerText = value;
+      } else if (param === 'wiggle') {
+        document.getElementById('slider-val-wiggle').innerText = value;
+      } else if (param === 'zoom') {
+        document.getElementById('slider-val-zoom').innerText = value;
+      } else if (param === 'bgWidth') {
+        document.getElementById('slider-val-bgwidth').innerText = value;
+      } else if (param === 'txtWidth') {
+        document.getElementById('slider-val-txtwidth').innerText = value;
+      } else if (param === 'sliceWidth') {
+        document.getElementById('slider-val-slice').innerText = value;
+      } else if (param === 'textYPercent') {
+        document.getElementById('slider-val-txty').innerText = value;
+      }
+    }
+
+    function resetCenter() {
+      cx = window.innerWidth * -0.05;
+      cy = window.innerHeight * 1.05;
+      
+      const indicator = document.getElementById('center-indicator');
+      indicator.style.left = cx + 'px';
+      indicator.style.top = cy + 'px';
+    }
+
+    // --- Mouse Drag Interaction for Center Point ---
+    function setupMouseEvents() {
+      const container = document.getElementById('canvas-container');
+      const indicator = document.getElementById('center-indicator');
+      const hint = document.getElementById('interaction-hint');
+
+      function updateCenter(e) {
+        const rect = canvas.getBoundingClientRect();
+        cx = e.clientX - rect.left;
+        cy = e.clientY - rect.top;
+        
+        indicator.style.left = cx + 'px';
+        indicator.style.top = cy + 'px';
+      }
+
+      container.addEventListener('mousedown', (e) => {
+        isDraggingCenter = true;
+        indicator.style.display = 'block';
+        updateCenter(e);
+        hint.style.opacity = '0';
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isDraggingCenter) {
+          updateCenter(e);
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isDraggingCenter) {
+          isDraggingCenter = false;
+          setTimeout(() => {
+            if (!isDraggingCenter) indicator.style.display = 'none';
+          }, 1000);
+        }
+      });
+
+      container.addEventListener('dblclick', () => {
+        resetCenter();
+        indicator.style.display = 'block';
+        setTimeout(() => {
+          if (!isDraggingCenter) indicator.style.display = 'none';
+        }, 1000);
+      });
+    }
+
+    // --- High Resolution Vertical A-Size ($1:\sqrt{2}$) Image Export (Preserves column shredding) ---
+    function exportASizeImage() {
+      const H_save = 2000;
+      const W_save = Math.round(H_save / Math.sqrt(2)); // ~1414px
+
+      const tempMain = document.createElement('canvas');
+      tempMain.width = W_save;
+      tempMain.height = H_save;
+      const tempCtx = tempMain.getContext('2d');
+
+      const tempOffText = document.createElement('canvas');
+      tempOffText.width = W_save;
+      tempOffText.height = H_save;
+      const tempOCtx = tempOffText.getContext('2d');
+
+      const tempSlicedText = document.createElement('canvas');
+      tempSlicedText.width = W_save;
+      tempSlicedText.height = H_save;
+      const tempSlicedCtx = tempSlicedText.getContext('2d');
+
+      const tempBg = document.createElement('canvas');
+      tempBg.width = W_save;
+      tempBg.height = H_save;
+      const tempBgCtx = tempBg.getContext('2d');
+
+      const tempTxt = document.createElement('canvas');
+      tempTxt.width = W_save;
+      tempTxt.height = H_save;
+      const tempTxtCtx = tempTxt.getContext('2d');
+
+      const currentH = canvas.height;
+      const currentW = canvas.width;
+      const scaleFactor = H_save / currentH;
+
+      const cx_save = (cx / currentW) * W_save;
+      const cy_save = (cy / currentH) * H_save;
+
+      const flowNormalized = Math.max(0, Math.min(1, (activeMetrics.flow - 15) / 205));
+      const spacing_base = (45 - (flowNormalized * 35)) * visualParams.zoom;
+      const spacing_save = spacing_base * scaleFactor;
+      const wavePhase_save = wavePhase * scaleFactor;
+
+      const pm25Normalized = Math.max(0, Math.min(1, (activeMetrics.pm25 - 10) / 190));
+      const bgLineWidth_save = (visualParams.bgWidth + pm25Normalized * 2.0) * scaleFactor;
+      const textLineWidth_save = (visualParams.txtWidth + pm25Normalized * 6.0) * scaleFactor;
+
+      const noiseNormalized = Math.max(0, Math.min(1, (activeMetrics.noise - 50) / 55));
+      const wiggleAmount = noiseNormalized * 8 * visualParams.wiggle;
+      
+      const timeVal = isVisualFrozen ? frozenTimestamp : lastTime;
+      const currentWiggle = Math.sin(timeVal * 0.001 * (15 + noiseNormalized * 25)) * wiggleAmount;
+      const totalOffset = (noiseNormalized * 40) + currentWiggle;
+      const totalOffset_save = totalOffset * scaleFactor;
+
+      const angleRad = (visualParams.angle * Math.PI) / 180;
+      const offsetX_save = Math.cos(angleRad) * totalOffset_save;
+      const offsetY_save = Math.sin(angleRad) * totalOffset_save;
+
+      const sliceWidth_save = visualParams.sliceWidth * scaleFactor;
+      const sliceAmplitude_save = noiseNormalized * 50 * visualParams.wiggle * scaleFactor;
+
+      // Draw raw typography mask at specified Y percentage
+      tempOCtx.fillStyle = '#ffffff';
+      tempOCtx.textAlign = 'center';
+      tempOCtx.textBaseline = 'middle';
+      
+      let fontSize = H_save * 0.35; // Responsive vertical scale
+      tempOCtx.font = `900 ${fontSize}px "Outfit", "Arial Black", sans-serif`;
+      let textWidth = tempOCtx.measureText(text).width;
+      if (textWidth > W_save * 0.85) {
+        fontSize = fontSize * (W_save * 0.85 / textWidth);
+        tempOCtx.font = `900 ${fontSize}px "Outfit", "Arial Black", sans-serif`;
+      }
+      
+      const textY_save = H_save * visualParams.textYPercent;
+      tempOCtx.fillText(text, W_save / 2, textY_save);
+
+      // Create high-res sliced text mask
+      tempSlicedCtx.clearRect(0, 0, W_save, H_save);
+      for (let x = 0; x < W_save; x += sliceWidth_save) {
+        const shiftY = Math.sin(x * (0.008 / scaleFactor) + timeVal * 0.004) * sliceAmplitude_save 
+                     + Math.sin(x * (0.03 / scaleFactor) - timeVal * 0.002) * (sliceAmplitude_save * 0.3);
+        tempSlicedCtx.drawImage(
+          tempOffText,
+          x, 0, sliceWidth_save, H_save,
+          x, shiftY, sliceWidth_save, H_save
+        );
+      }
+
+      // Resolve colors
+      let bgStrokeColor = 'rgba(255, 255, 255, 0.7)';
+      let textStrokeColor = '#ffffff';
+      if (visualParams.colorMode) {
+        const hueBg = 190 + pm25Normalized * 60;
+        bgStrokeColor = `hsla(${hueBg}, 80%, 45%, 0.65)`;
+        const hueText = 340 + noiseNormalized * 70;
+        textStrokeColor = `hsl(${hueText % 360}, 100%, 60%)`;
+      }
+
+      // Draw Background Lines
+      tempBgCtx.strokeStyle = bgStrokeColor;
+      tempBgCtx.lineWidth = bgLineWidth_save;
+      tempBgCtx.lineCap = 'round';
+      if (visualParams.glow) {
+        tempBgCtx.shadowBlur = 6 * scaleFactor;
+        tempBgCtx.shadowColor = bgStrokeColor;
+      }
+
+      const maxRadius_save = Math.hypot(
+        Math.max(cx_save, W_save - cx_save),
+        Math.max(cy_save, H_save - cy_save)
+      ) + spacing_save * 2;
+
+      for (let r = wavePhase_save; r < maxRadius_save; r += spacing_save) {
+        tempBgCtx.beginPath();
+        tempBgCtx.arc(cx_save, cy_save, r, 0, Math.PI * 2);
+        tempBgCtx.stroke();
+      }
+
+      // Hollow out background circles using Sliced Text Mask
+      tempBgCtx.globalCompositeOperation = 'destination-out';
+      tempBgCtx.drawImage(tempSlicedText, 0, 0);
+      tempBgCtx.globalCompositeOperation = 'source-over';
+
+      // Draw Text-Masked Lines (raw/unsliced center)
+      tempTxtCtx.strokeStyle = textStrokeColor;
+      tempTxtCtx.lineWidth = textLineWidth_save;
+      tempTxtCtx.lineCap = 'round';
+      if (visualParams.glow) {
+        tempTxtCtx.shadowBlur = 12 * scaleFactor;
+        tempTxtCtx.shadowColor = textStrokeColor;
+      }
+
+      const shiftCx_save = cx_save + offsetX_save;
+      const shiftCy_save = cy_save + offsetY_save;
+      const textMaxRadius_save = Math.hypot(
+        Math.max(shiftCx_save, W_save - shiftCx_save),
+        Math.max(shiftCy_save, H_save - shiftCy_save)
+      ) + spacing_save * 2;
+
+      for (let r = wavePhase_save; r < textMaxRadius_save; r += spacing_save) {
+        tempTxtCtx.beginPath();
+        tempTxtCtx.arc(shiftCx_save, shiftCy_save, r, 0, Math.PI * 2);
+        tempTxtCtx.stroke();
+      }
+
+      tempTxtCtx.globalCompositeOperation = 'destination-in';
+      tempTxtCtx.drawImage(tempOffText, 0, 0);
+      tempTxtCtx.globalCompositeOperation = 'source-over';
+
+      // Composite background normally
+      tempCtx.fillStyle = '#000000';
+      tempCtx.fillRect(0, 0, W_save, H_save);
+      tempCtx.drawImage(tempBg, 0, 0);
+
+      // Composite text layer column-by-column with slice displacement
+      for (let x = 0; x < W_save; x += sliceWidth_save) {
+        const shiftY = Math.sin(x * (0.008 / scaleFactor) + timeVal * 0.004) * sliceAmplitude_save 
+                     + Math.sin(x * (0.03 / scaleFactor) - timeVal * 0.002) * (sliceAmplitude_save * 0.3);
+        tempCtx.drawImage(
+          tempTxt,
+          x, 0, sliceWidth_save, H_save,
+          x, shiftY, sliceWidth_save, H_save
+        );
+      }
+
+      // Trigger download
+      const dataUrl = tempMain.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `resonating_echoes_${text}_asize.png`;
+      link.href = dataUrl;
+      link.click();
+    }
+
+    // --- Rendering Logic ---
+    
+    // Draw the typographic mask (Bold White Text on transparent background)
+    function drawTypographyMask(ctxTarget, textVal, w, h) {
+      ctxTarget.clearRect(0, 0, w, h);
+      ctxTarget.fillStyle = '#ffffff';
+      ctxTarget.textAlign = 'center';
+      ctxTarget.textBaseline = 'middle';
+      
+      let fontSize = h * 0.33; // Responsive vertical scale
+      ctxTarget.font = `900 ${fontSize}px "Outfit", "Arial Black", sans-serif`;
+      
+      let textWidth = ctxTarget.measureText(textVal).width;
+      // Fit to screen width with 15% margins
+      if (textWidth > w * 0.85) {
+        fontSize = fontSize * (w * 0.85 / textWidth);
+        ctxTarget.font = `900 ${fontSize}px "Outfit", "Arial Black", sans-serif`;
+      }
+      
+      // Vertical position driven by visualParams.textYPercent (Requested: moved to positive X axis near bottom)
+      const textY = h * visualParams.textYPercent;
+      ctxTarget.fillText(textVal, w / 2, textY);
+    }
+
+    // Main Render Loop
+    function renderLoop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const deltaTime = isVisualFrozen ? 0 : (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+
+      // Handle CSV Timeline Auto-playback
+      if (runMode === 'csv' && isPlaying && environmentalData.length > 0) {
+        const speedMultiplier = parseFloat(document.getElementById('play-speed-slider').value);
+        accumulatedTime += (isVisualFrozen ? 0 : deltaTime) * speedMultiplier * 0.15; 
+        
+        if (accumulatedTime >= 1) {
+          currentDataIndex = (currentDataIndex + 1) % environmentalData.length;
+          updateUIWithData(environmentalData[currentDataIndex]);
+          accumulatedTime = 0;
+        }
+      }
+
+      const w = canvas.width;
+      const h = canvas.height;
+      const timeVal = isVisualFrozen ? frozenTimestamp : timestamp;
+
+      // 1. Re-render typography mask (unsliced raw coordinates)
+      drawTypographyMask(oCtx, text, w, h);
+
+      // 2. Generate Sliced Text Mask for background hollowing (Requested: jagged borders)
+      slicedTextCtx.clearRect(0, 0, w, h);
+      const sliceWidth = visualParams.sliceWidth;
+      const noiseNormalized = Math.max(0, Math.min(1, (activeMetrics.noise - 50) / 55));
+      const sliceAmplitude = noiseNormalized * 50 * visualParams.wiggle; 
+
+      if (sliceWidth > 1) {
+        for (let x = 0; x < w; x += sliceWidth) {
+          const shiftY = Math.sin(x * 0.008 + timeVal * 0.004) * sliceAmplitude 
+                       + Math.sin(x * 0.03 - timeVal * 0.002) * (sliceAmplitude * 0.3);
+          slicedTextCtx.drawImage(
+            offscreenText,
+            x, 0, sliceWidth, h,
+            x, shiftY, sliceWidth, h
+          );
+        }
+      } else {
+        slicedTextCtx.drawImage(offscreenText, 0, 0);
+      }
+
+      // 3. Clear canvas layers
+      bgCtx.clearRect(0, 0, w, h);
+      textCtx.clearRect(0, 0, w, h);
+
+      // Spacings and line parameters
+      const minSpacing = 10;
+      const maxSpacing = 45;
+      const flowNormalized = Math.max(0, Math.min(1, (activeMetrics.flow - 15) / 205));
+      const spacing = (maxSpacing - (flowNormalized * (maxSpacing - minSpacing))) * visualParams.zoom;
+
+      const flowSpeed = activeMetrics.wind * 10;
+      wavePhase = (wavePhase + deltaTime * flowSpeed) % spacing;
+
+      const pm25Normalized = Math.max(0, Math.min(1, (activeMetrics.pm25 - 10) / 190));
+      const bgLineWidth = visualParams.bgWidth + pm25Normalized * 2.0;
+      const textLineWidth = visualParams.txtWidth + pm25Normalized * 6.0;
+
+      // Base coordinate shift
+      const wiggleSpeed = 15 + noiseNormalized * 25; 
+      const wiggleAmount = noiseNormalized * 8 * visualParams.wiggle;
+      const currentWiggle = Math.sin(timeVal * 0.001 * wiggleSpeed) * wiggleAmount;
+
+      const baseOffset = noiseNormalized * 40; 
+      const totalOffset = baseOffset + currentWiggle;
+
+      const angleRad = (visualParams.angle * Math.PI) / 180;
+      const offsetX = Math.cos(angleRad) * totalOffset;
+      const offsetY = Math.sin(angleRad) * totalOffset;
+
+      const maxRadius = Math.hypot(
+        Math.max(cx, w - cx),
+        Math.max(cy, h - cy)
+      ) + spacing * 2;
+
+      // Resolve colors
+      let bgStrokeColor = 'rgba(255, 255, 255, 0.7)';
+      let textStrokeColor = '#ffffff';
+      
+      if (visualParams.colorMode) {
+        const hueBg = 190 + pm25Normalized * 60; 
+        bgStrokeColor = `hsla(${hueBg}, 80%, 45%, 0.65)`;
+        const hueText = 340 + noiseNormalized * 70; 
+        textStrokeColor = `hsl(${hueText % 360}, 100%, 60%)`;
+      }
+
+      // --- Draw Background Lines ---
+      bgCtx.strokeStyle = bgStrokeColor;
+      bgCtx.lineWidth = bgLineWidth;
+      bgCtx.lineCap = 'round';
+      
+      if (visualParams.glow) {
+        bgCtx.shadowBlur = 6;
+        bgCtx.shadowColor = bgStrokeColor;
+      } else {
+        bgCtx.shadowBlur = 0;
+      }
+
+      for (let r = wavePhase; r < maxRadius; r += spacing) {
+        bgCtx.beginPath();
+        bgCtx.arc(cx, cy, r, 0, Math.PI * 2);
+        bgCtx.stroke();
+      }
+
+      // Hollow out background circles using Sliced Mask
+      bgCtx.globalCompositeOperation = 'destination-out';
+      bgCtx.drawImage(slicedTextCanvas, 0, 0);
+      bgCtx.globalCompositeOperation = 'source-over'; 
+
+      // --- Draw Text-Masked Lines (Shifted & Thicker) ---
+      textCtx.strokeStyle = textStrokeColor;
+      textCtx.lineWidth = textLineWidth;
+      textCtx.lineCap = 'round';
+      
+      if (visualParams.glow) {
+        textCtx.shadowBlur = 12;
+        textCtx.shadowColor = textStrokeColor;
+      } else {
+        textCtx.shadowBlur = 0;
+      }
+
+      const shiftCx = cx + offsetX;
+      const shiftCy = cy + offsetY;
+      const textMaxRadius = Math.hypot(
+        Math.max(shiftCx, w - shiftCx),
+        Math.max(shiftCy, h - shiftCy)
+      ) + spacing * 2;
+
+      for (let r = wavePhase; r < textMaxRadius; r += spacing) {
+        textCtx.beginPath();
+        textCtx.arc(shiftCx, shiftCy, r, 0, Math.PI * 2);
+        textCtx.stroke();
+      }
+
+      // Mask using Raw Un-sliced Text Mask (to keep drawing coordinates standard)
+      textCtx.globalCompositeOperation = 'destination-in';
+      textCtx.drawImage(offscreenText, 0, 0);
+      textCtx.globalCompositeOperation = 'source-over'; 
+
+      // --- Draw Final Output with Column Slice Shredding (Requested: jagged breaks) ---
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, w, h);
+
+      // Render clean hollow background
+      ctx.drawImage(bgCanvas, 0, 0);
+
+      // Render text circles column by column with vertical displacement
+      if (sliceWidth > 1) {
+        for (let x = 0; x < w; x += sliceWidth) {
+          const shiftY = Math.sin(x * 0.008 + timeVal * 0.004) * sliceAmplitude 
+                       + Math.sin(x * 0.03 - timeVal * 0.002) * (sliceAmplitude * 0.3);
+          ctx.drawImage(
+            textCanvas,
+            x, 0, sliceWidth, h, // source column
+            x, shiftY, sliceWidth, h // destination column shifted vertically
+          );
+        }
+      } else {
+        ctx.drawImage(textCanvas, 0, 0);
+      }
+
+      requestAnimationFrame(renderLoop);
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
