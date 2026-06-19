@@ -3,3 +3,6 @@ Major modern transit hubs, such as Shanghai South Railway Station, expose commut
 
 Design Decision:
 To bridge this sensory gap, the installation translates invisible environmental metrics into dynamic, architectural-inspired generative typography. By morphing concentric soundwave circles that visually echo the station's dome, the design transforms cold, abstract data into a tangible, breathing typographic landscape, prompting commuters to pause and visually feel the pulse and environmental strain of the city.
+
+Result:
+The installation materializes as an interactive, real-time sensory mirror of the station. By combining fluid, high-DPI generative concentric rings with responsive multi-line typography, it bridges the gap between urban data and human perception. Commuters can interactively shift the circular origin, fostering a reflective, aesthetic dialogue between the individual, the dome architecture, and the ambient urban loads.
