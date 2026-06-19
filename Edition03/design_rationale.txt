@@ -1,0 +1,5 @@
+Problem / Friction:
+Major modern transit hubs, such as Shanghai South Railway Station, expose commuters to continuous, high-stress environmental loads—ranging from ambient noise and dense crowd flows to invisible air pollution (PM2.5). These environmental stressors are often ignored or accepted as normal background noise, leaving people disconnected from the physiological and psychological impact of their surroundings.
+
+Design Decision:
+To bridge this sensory gap, the installation translates invisible environmental metrics into dynamic, architectural-inspired generative typography. By morphing concentric soundwave circles that visually echo the station's dome, the design transforms cold, abstract data into a tangible, breathing typographic landscape, prompting commuters to pause and visually feel the pulse and environmental strain of the city.
